@@ -5,6 +5,12 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](./pyproject.toml)
 [![Qiskit](https://img.shields.io/badge/Qiskit-Runtime%20%2B%20Aer-6133BD.svg)](https://qiskit.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Website](https://img.shields.io/badge/website-christopheraltman.com-green)](https://www.christopheraltman.com)
+[![Hugging Face](https://img.shields.io/badge/huggingface-Coh%C3%A6rence-white)](https://huggingface.co/Cohaerence)
+
+[![Google Scholar](https://img.shields.io/badge/Google_Scholar-Profile-blue?logo=google-scholar)](https://scholar.google.com/citations?user=tvwpCcgAAAAJ)
+[![X](https://img.shields.io/badge/X-@coherence-blue)](https://x.com/coherence)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Altman-blue?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/Altman)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="artifacts/readme/fig_error_vs_shots_sim_dark.png">
