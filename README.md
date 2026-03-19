@@ -561,7 +561,7 @@ The IBM artifact layer demonstrates something nontrivial: the qubit-native weak-
 Project-specific citation metadata (`CITATION.cff`, DOI, arXiv preprint) hasn't been committed yet. In the interim:
 
 ```text
-Christopher Altman. ibmq-weakmeasurement-entanglement-active-design.
+Christopher Altman. ibmq-weakmeasurement-entanglement.
 Software repository, version 0.1.0, 2026.
 ```
 
