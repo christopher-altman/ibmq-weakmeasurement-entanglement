@@ -7,6 +7,8 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
+from .artifact_history import save_figure_versioned
+
 
 def _base_style() -> None:
     plt.style.use("default")
@@ -40,7 +42,7 @@ def plot_calibration_curve(calibration_rows: list[dict[str, Any]], export_dir: P
 
     path = export_dir / "fig_calibration.png"
     fig.tight_layout()
-    fig.savefig(path)
+    save_figure_versioned(fig, path)
     plt.close(fig)
     return path
 
@@ -61,7 +63,7 @@ def plot_sample_efficiency(sample_rows: list[dict[str, Any]], export_dir: Path) 
 
     path = export_dir / "fig_sample_efficiency.png"
     fig.tight_layout()
-    fig.savefig(path)
+    save_figure_versioned(fig, path)
     plt.close(fig)
     return path
 
@@ -95,7 +97,7 @@ def plot_error_comparison(metrics_rows: list[dict[str, Any]], export_dir: Path) 
 
     path = export_dir / "fig_error_comparison.png"
     fig.tight_layout()
-    fig.savefig(path)
+    save_figure_versioned(fig, path)
     plt.close(fig)
     return path
 
@@ -114,6 +116,6 @@ def plot_shift_abstention(metrics_rows: list[dict[str, Any]], export_dir: Path) 
 
     path = export_dir / "fig_shift_abstention.png"
     fig.tight_layout()
-    fig.savefig(path)
+    save_figure_versioned(fig, path)
     plt.close(fig)
     return path

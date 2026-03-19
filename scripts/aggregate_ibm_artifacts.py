@@ -1,8 +1,8 @@
 """
 Aggregate IBM hardware artifacts from completed runs.
 
-Reads the ibm_jobs.json and raw counts from each completed run directory,
-reconstructs metric rows, and produces the required paper-ready artifacts.
+Reads per-run IBM job metadata and raw counts from completed run directories,
+reconstructs metric rows, and produces the paper-ready aggregate artifacts.
 """
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from src.artifact_history import save_figure_versioned, write_csv_versioned, write_json_versioned, write_text_versioned
 from src.data import (
     StateParams,
     allocate_shots_by_weights,
@@ -34,7 +35,7 @@ from src.data import (
     rho_ab,
 )
 from src.design import DesignSetting
-from src.helpers import RunConfig, env_info, now_utc_iso, seed_all, write_json
+from src.helpers import RunConfig, env_info, now_utc_iso, seed_all
 from src.main import (
     METRIC_COLUMNS,
     _collect_fixed_measurements,
@@ -46,10 +47,15 @@ from src.main import (
     _state_seed,
 )
 from src.metrics import concurrence, coverage, kl_shift, mae, negativity, rmse
+from src.public_artifacts import (
+    INTERNAL_IBM_JOBS_PATH,
+    update_internal_manifest,
+    update_public_claims,
+    update_public_manifest,
+)
 from src.weak_measurement import BITSTRINGS_3Q, aggregate_feature_vector, simulate_counts_for_state
 
 OUT_DIR = ROOT / "artifacts"
-IBM_CACHE = OUT_DIR / "ibm_cache"
 RAW_IBM = OUT_DIR / "raw" / "ibm_runs"
 
 SIM_FIELD_ORDER = [
@@ -242,22 +248,16 @@ def main():
 
     # Write metrics_ibm.csv
     metrics_path = OUT_DIR / "metrics_ibm.csv"
-    with metrics_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=SIM_FIELD_ORDER)
-        writer.writeheader()
-        for row in all_rows:
-            writer.writerow({k: row.get(k, "") for k in SIM_FIELD_ORDER})
+    write_csv_versioned(metrics_path, all_rows, SIM_FIELD_ORDER)
     print(f"Wrote {metrics_path}")
 
-    # Write ibm_cache/ibm_jobs.json
+    # Preserve raw IBM job provenance internally.
     backend_name = runs[0]["backend"] if runs else "unknown"
-    IBM_CACHE.mkdir(parents=True, exist_ok=True)
-
     seeds_used = sorted(set(r["seed"] for r in runs))
     shots_used = sorted(set(r["shots"] for r in runs))
     policies_used = sorted(set(r["policy"] for r in runs))
 
-    write_json(IBM_CACHE / "ibm_jobs.json", {
+    write_json_versioned(INTERNAL_IBM_JOBS_PATH, {
         "backend_type": "ibm",
         "backend_name": backend_name,
         "total_jobs": len(set(all_job_ids)),
@@ -269,19 +269,7 @@ def main():
         "n_completed_configs": len(runs),
         "timestamp": now_utc_iso(),
     })
-    print(f"Wrote {IBM_CACHE / 'ibm_jobs.json'}")
-
-    # Copy count files to ibm_cache
-    for run in runs:
-        cache_dir = run["dir"] / "ibm_cache"
-        if cache_dir.exists():
-            for f in cache_dir.glob("counts_*.json"):
-                dest = IBM_CACHE / f.name
-                if not dest.exists():
-                    dest.write_bytes(f.read_bytes())
-
-    n_counts = len(list(IBM_CACHE.glob("counts_*.json")))
-    print(f"Count files in ibm_cache: {n_counts}")
+    print(f"Wrote {INTERNAL_IBM_JOBS_PATH}")
 
     # Make figures
     fig1 = make_error_vs_shots(all_rows, shots_used)
@@ -297,9 +285,9 @@ def main():
     update_experiment_report(all_rows, runs, backend_name)
     print("Updated .internal/run-notes/experiment_run_report.md")
 
-    # Update run_manifest.json
+    # Update public and internal artifact metadata.
     update_manifest(all_rows, runs, backend_name, seeds_used, shots_used, policies_used)
-    print("Updated artifacts/run_manifest.json")
+    print("Updated public and internal artifact metadata")
 
     print("\nDone!")
 
@@ -348,7 +336,7 @@ def make_error_vs_shots(ibm_rows, shots_grid):
     ax.legend()
     fig.tight_layout()
     path = OUT_DIR / "fig_error_vs_shots_ibm.png"
-    fig.savefig(path, dpi=180)
+    save_figure_versioned(fig, path, dpi=180)
     plt.close(fig)
     return path
 
@@ -401,7 +389,7 @@ def make_sim_vs_ibm_gap(ibm_rows, shots_grid):
     ax.legend()
     fig.tight_layout()
     path = OUT_DIR / "fig_sim_vs_ibm_gap.png"
-    fig.savefig(path, dpi=180)
+    save_figure_versioned(fig, path, dpi=180)
     plt.close(fig)
     return path
 
@@ -483,8 +471,11 @@ def write_summary(ibm_rows, backend_name, runs, seeds, shots_grid, policies):
     lines.append("- `artifacts/metrics_ibm.csv`")
     lines.append("- `artifacts/fig_error_vs_shots_ibm.png`")
     lines.append("- `artifacts/fig_sim_vs_ibm_gap.png`")
-    lines.append("- `artifacts/ibm_cache/ibm_jobs.json`")
-    lines.append("- `artifacts/ibm_cache/counts_*.json`")
+    lines.append("- `artifacts/run_manifest.json`")
+    lines.append("- `artifacts/claims_map.json`")
+    lines.append("")
+    lines.append("## Provenance Note")
+    lines.append("- Raw IBM job IDs and per-circuit count caches are preserved in local provenance during artifact generation and are not part of the published repository snapshot.")
     lines.append("")
 
     info = env_info()
@@ -494,7 +485,7 @@ def write_summary(ibm_rows, backend_name, runs, seeds, shots_grid, policies):
         lines.append(f"- {k}: `{v}`")
 
     out = OUT_DIR / "summary_ibm.md"
-    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_text_versioned(out, "\n".join(lines) + "\n")
     return out
 
 
@@ -541,20 +532,20 @@ def update_experiment_report(ibm_rows, runs, backend_name):
     lines.append("python scripts/aggregate_ibm_artifacts.py   # Regenerate artifacts from cached data")
     lines.append("```")
 
-    report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_text_versioned(report_path, "\n".join(lines) + "\n")
 
 
 def update_manifest(ibm_rows, runs, backend_name, seeds, shots_grid, policies):
-    """Append IBM run entry to run_manifest.json."""
-    manifest_path = OUT_DIR / "run_manifest.json"
-    if manifest_path.exists():
-        manifest = json.loads(manifest_path.read_text())
-    else:
-        manifest = {}
-
+    """Update public artifact metadata and internal raw provenance manifests."""
     info = env_info()
-
-    manifest["ibm_hardware_run"] = {
+    total_jobs = sum(r["n_jobs"] for r in runs)
+    outputs = [
+        "artifacts/metrics_ibm.csv",
+        "artifacts/summary_ibm.md",
+        "artifacts/fig_error_vs_shots_ibm.png",
+        "artifacts/fig_sim_vs_ibm_gap.png",
+    ]
+    update_internal_manifest("ibm_hardware_matrix", {
         "timestamp_utc": now_utc_iso(),
         "backend": backend_name,
         "seeds": seeds,
@@ -564,7 +555,7 @@ def update_manifest(ibm_rows, runs, backend_name, seeds, shots_grid, policies):
         "n_completed_configs": len(runs),
         "n_total_configs": 18,
         "n_metric_rows": len(ibm_rows),
-        "n_jobs": sum(r["n_jobs"] for r in runs),
+        "n_jobs": total_jobs,
         "venv": ".venv_ibm",
         "python": info["python"].split()[0],
         "package_versions": info["versions"],
@@ -573,16 +564,56 @@ def update_manifest(ibm_rows, runs, backend_name, seeds, shots_grid, policies):
             "python scripts/aggregate_ibm_artifacts.py",
         ],
         "outputs": [
-            "artifacts/metrics_ibm.csv",
-            "artifacts/summary_ibm.md",
-            "artifacts/fig_error_vs_shots_ibm.png",
-            "artifacts/fig_sim_vs_ibm_gap.png",
-            "artifacts/ibm_cache/ibm_jobs.json",
-            "artifacts/ibm_cache/counts_*.json",
+            *outputs,
+            str(INTERNAL_IBM_JOBS_PATH.relative_to(ROOT)),
+            "artifacts/raw/ibm_runs/*/ibm_cache/counts_*.json",
         ],
-    }
-
-    write_json(manifest_path, manifest)
+    })
+    update_public_manifest("ibm_hardware_matrix", {
+        "backend": backend_name,
+        "seeds": seeds,
+        "shots_grid": shots_grid,
+        "g_grid": G_GRID,
+        "policies": policies,
+        "n_completed_configs": len(runs),
+        "n_metric_rows": len(ibm_rows),
+        "n_jobs_total": total_jobs,
+        "outputs": outputs,
+        "scope_note": (
+            "Published IBM artifacts validate the real-hardware execution and "
+            "aggregation workflow. The current entanglement estimates remain "
+            "proxy-backed and are not a direct hardware-side adaptive-advantage "
+            "comparison."
+        ),
+    })
+    update_public_claims("hardware", [
+        {
+            "claim_id": "C3_ibm_execution_stack_validation",
+            "statement": (
+                "The published IBM aggregate confirms execution of the "
+                "qubit-native weak-measurement workflow on ibm_torino across "
+                f"{len(runs)} completed configurations, {total_jobs} total IBM "
+                f"jobs, and {len(ibm_rows)} aggregate metric rows."
+            ),
+            "evidence": [
+                "artifacts/metrics_ibm.csv",
+                "artifacts/summary_ibm.md",
+                "artifacts/fig_error_vs_shots_ibm.png",
+                "artifacts/fig_sim_vs_ibm_gap.png",
+                "artifacts/run_manifest.json",
+            ],
+            "reproduce": [
+                "python scripts/run_ibm_matrix.py",
+                "python scripts/aggregate_ibm_artifacts.py",
+            ],
+            "notes": (
+                "This is an execution-stack validation claim. The current IBM "
+                "concurrence and negativity values are reconstructed through a "
+                "simulation-side proxy model and should not be read as a direct "
+                "hardware-side adaptive-advantage result."
+            ),
+        }
+    ])
 
 
 if __name__ == "__main__":

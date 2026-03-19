@@ -42,6 +42,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from src.artifact_history import save_figure_versioned, write_csv_versioned, write_json_versioned, write_text_versioned
 from src.data import (
     StateParams,
     allocate_shots_by_weights,
@@ -50,7 +51,7 @@ from src.data import (
     rho_ab,
 )
 from src.design import DesignSetting, build_candidate_settings, estimate_state_with_policy
-from src.helpers import RunConfig, env_info, now_utc_iso, seed_all, stable_hash_circuit, write_json
+from src.helpers import RunConfig, env_info, now_utc_iso, seed_all, stable_hash_circuit
 from src.metrics import concurrence, coverage, kl_shift, mae, negativity, rmse, shots_to_threshold
 from src.models import apply_conformal_interval, split_conformal_calibrate
 from src.weak_measurement import BITSTRINGS_3Q, aggregate_feature_vector, simulate_counts_for_state
@@ -64,6 +65,12 @@ from src.main import (
     _rows_fill_rmse,
     _split_train_cal,
     _state_seed,
+)
+from src.public_artifacts import (
+    INTERNAL_IBM_JOBS_PATH,
+    update_internal_manifest,
+    update_public_claims,
+    update_public_manifest,
 )
 
 # ---------------------------------------------------------------------------
@@ -428,7 +435,7 @@ def run_single_ibm_config(
             r["rmse_n"] = rmse_n_val
 
     # Save job IDs
-    write_json(run_dir / "ibm_jobs.json", {
+    write_json_versioned(run_dir / "ibm_jobs.json", {
         "backend": backend.name,
         "policy": policy,
         "seed": seed,
@@ -486,23 +493,19 @@ def build_sim_proxy(dataset, g_grid, seed=0, shots=2000):
 def write_ibm_metrics(all_rows):
     """Write metrics_ibm.csv in the same schema as metrics_sim.csv."""
     out = OUT_DIR / "metrics_ibm.csv"
-    with out.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=SIM_FIELD_ORDER)
-        writer.writeheader()
-        for row in all_rows:
-            writer.writerow({k: row.get(k, "") for k in SIM_FIELD_ORDER})
+    write_csv_versioned(out, all_rows, SIM_FIELD_ORDER)
     return out
 
 
 def write_ibm_jobs_json(all_job_ids, backend_name, all_rows):
-    """Write the consolidated ibm_cache/ibm_jobs.json."""
+    """Write the consolidated raw IBM job manifest to internal provenance."""
     # Collect per-run info
     runs = defaultdict(list)
     for r in all_rows:
         key = (str(r["seed"]), str(r["shots"]), str(r["policy"]))
         runs[key].append(r["state_id"])
 
-    write_json(IBM_CACHE / "ibm_jobs.json", {
+    write_json_versioned(INTERNAL_IBM_JOBS_PATH, {
         "backend_type": "ibm",
         "backend_name": backend_name,
         "total_jobs": len(set(all_job_ids)),
@@ -522,6 +525,7 @@ def write_ibm_jobs_json(all_job_ids, backend_name, all_rows):
         },
         "timestamp": now_utc_iso(),
     })
+    return INTERNAL_IBM_JOBS_PATH
 
 
 def make_ibm_figures(ibm_rows, sim_csv_path):
@@ -570,7 +574,7 @@ def make_ibm_figures(ibm_rows, sim_csv_path):
     ax.legend()
     fig.tight_layout()
     fig1_path = OUT_DIR / "fig_error_vs_shots_ibm.png"
-    fig.savefig(fig1_path, dpi=180)
+    save_figure_versioned(fig, fig1_path, dpi=180)
     plt.close(fig)
 
     # ------ fig_sim_vs_ibm_gap.png ------
@@ -623,7 +627,7 @@ def make_ibm_figures(ibm_rows, sim_csv_path):
     ax2.legend()
     fig2.tight_layout()
     fig2_path = OUT_DIR / "fig_sim_vs_ibm_gap.png"
-    fig2.savefig(fig2_path, dpi=180)
+    save_figure_versioned(fig2, fig2_path, dpi=180)
     plt.close(fig2)
 
     return fig1_path, fig2_path
@@ -706,8 +710,11 @@ def write_summary_ibm(ibm_rows, backend_name):
     lines.append("- `artifacts/metrics_ibm.csv`")
     lines.append("- `artifacts/fig_error_vs_shots_ibm.png`")
     lines.append("- `artifacts/fig_sim_vs_ibm_gap.png`")
-    lines.append("- `artifacts/ibm_cache/ibm_jobs.json`")
-    lines.append("- `artifacts/ibm_cache/counts_*.json`")
+    lines.append("- `artifacts/run_manifest.json`")
+    lines.append("- `artifacts/claims_map.json`")
+    lines.append("")
+    lines.append("## Provenance Note")
+    lines.append("- Raw IBM job IDs and per-circuit count caches are preserved in local provenance during artifact generation and are not part of the published repository snapshot.")
     lines.append("")
 
     info = env_info()
@@ -717,8 +724,88 @@ def write_summary_ibm(ibm_rows, backend_name):
         lines.append(f"- {k}: `{v}`")
 
     out = OUT_DIR / "summary_ibm.md"
-    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_text_versioned(out, "\n".join(lines) + "\n")
     return out
+
+
+def update_public_and_internal_metadata(all_job_ids, backend_name, all_rows):
+    total_jobs = len(set(all_job_ids))
+    outputs = [
+        "artifacts/metrics_ibm.csv",
+        "artifacts/summary_ibm.md",
+        "artifacts/fig_error_vs_shots_ibm.png",
+        "artifacts/fig_sim_vs_ibm_gap.png",
+    ]
+    info = env_info()
+
+    update_internal_manifest("ibm_hardware_matrix", {
+        "timestamp_utc": now_utc_iso(),
+        "backend": backend_name,
+        "seeds": SEEDS,
+        "shots_grid": SHOTS_GRID,
+        "g_grid": G_GRID,
+        "policies": POLICIES,
+        "n_completed_configs": len(SEEDS) * len(SHOTS_GRID) * len(POLICIES),
+        "n_total_configs": len(SEEDS) * len(SHOTS_GRID) * len(POLICIES),
+        "n_metric_rows": len(all_rows),
+        "n_jobs": total_jobs,
+        "python": info["python"].split()[0],
+        "package_versions": info["versions"],
+        "commands_run": [
+            "python scripts/run_ibm_matrix.py",
+        ],
+        "outputs": [
+            *outputs,
+            str(INTERNAL_IBM_JOBS_PATH.relative_to(ROOT)),
+            "artifacts/raw/ibm_runs/*/ibm_cache/counts_*.json",
+        ],
+    })
+    update_public_manifest("ibm_hardware_matrix", {
+        "backend": backend_name,
+        "seeds": SEEDS,
+        "shots_grid": SHOTS_GRID,
+        "g_grid": G_GRID,
+        "policies": POLICIES,
+        "n_completed_configs": len(SEEDS) * len(SHOTS_GRID) * len(POLICIES),
+        "n_metric_rows": len(all_rows),
+        "n_jobs_total": total_jobs,
+        "outputs": outputs,
+        "scope_note": (
+            "Published IBM artifacts validate the real-hardware execution and "
+            "aggregation workflow. The current entanglement estimates remain "
+            "proxy-backed and are not a direct hardware-side adaptive-advantage "
+            "comparison."
+        ),
+    })
+    update_public_claims("hardware", [
+        {
+            "claim_id": "C3_ibm_execution_stack_validation",
+            "statement": (
+                "The published IBM aggregate confirms execution of the "
+                "qubit-native weak-measurement workflow on "
+                f"{backend_name} across {len(SEEDS) * len(SHOTS_GRID) * len(POLICIES)} "
+                f"completed configurations, {total_jobs} total IBM jobs, and "
+                f"{len(all_rows)} aggregate metric rows."
+            ),
+            "evidence": [
+                "artifacts/metrics_ibm.csv",
+                "artifacts/summary_ibm.md",
+                "artifacts/fig_error_vs_shots_ibm.png",
+                "artifacts/fig_sim_vs_ibm_gap.png",
+                "artifacts/run_manifest.json",
+            ],
+            "reproduce": [
+                "python scripts/run_ibm_matrix.py",
+                "python scripts/aggregate_ibm_artifacts.py",
+            ],
+            "notes": (
+                "This is an execution-stack validation claim. The current IBM "
+                "concurrence and negativity values are reconstructed through a "
+                "simulation-side proxy model and should not be read as a direct "
+                "hardware-side adaptive-advantage result."
+            ),
+        }
+    ])
 
 
 def main():
@@ -739,7 +826,7 @@ def main():
     except Exception as e:
         error_msg = f"IBM connectivity failed: {e}\n{traceback.format_exc()}"
         print(error_msg)
-        (IBM_CACHE / "hardware_error.log").write_text(error_msg, encoding="utf-8")
+        write_text_versioned(IBM_CACHE / "hardware_error.log", error_msg)
         _write_blocked_artifacts(str(e))
         return
 
@@ -782,7 +869,7 @@ def main():
     except Exception as e:
         error_msg = f"Hardware run failed at config {idx}/{n_configs}: {e}\n{traceback.format_exc()}"
         print(error_msg)
-        (IBM_CACHE / "hardware_error.log").write_text(error_msg, encoding="utf-8")
+        write_text_versioned(IBM_CACHE / "hardware_error.log", error_msg)
         if not all_rows:
             _write_blocked_artifacts(str(e))
             return
@@ -793,8 +880,8 @@ def main():
     metrics_path = write_ibm_metrics(all_rows)
     print(f"  {metrics_path}")
 
-    write_ibm_jobs_json(all_job_ids, backend_name, all_rows)
-    print(f"  {IBM_CACHE / 'ibm_jobs.json'}")
+    jobs_path = write_ibm_jobs_json(all_job_ids, backend_name, all_rows)
+    print(f"  {jobs_path}")
 
     fig1, fig2 = make_ibm_figures(all_rows, OUT_DIR / "metrics_sim.csv")
     print(f"  {fig1}")
@@ -802,6 +889,9 @@ def main():
 
     summary = write_summary_ibm(all_rows, backend_name)
     print(f"  {summary}")
+    update_public_and_internal_metadata(all_job_ids, backend_name, all_rows)
+    print(f"  {OUT_DIR / 'run_manifest.json'}")
+    print(f"  {OUT_DIR / 'claims_map.json'}")
 
     print("\n[5/5] Done!")
     print(f"  Total IBM jobs submitted: {len(set(all_job_ids))}")
@@ -813,26 +903,23 @@ def _write_blocked_artifacts(reason):
     ts = now_utc_iso()
     # metrics_ibm.csv with blocked row
     out = OUT_DIR / "metrics_ibm.csv"
-    with out.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=SIM_FIELD_ORDER)
-        writer.writeheader()
-        writer.writerow({
-            "backend": "ibm",
-            "method": "hardware_blocked",
-            "policy": "",
-            "seed": "",
-            "shots": "",
-            "note": reason,
-            "timestamp_utc": ts,
-        })
+    write_csv_versioned(out, [{
+        "backend": "ibm",
+        "method": "hardware_blocked",
+        "policy": "",
+        "seed": "",
+        "shots": "",
+        "note": reason,
+        "timestamp_utc": ts,
+    }], SIM_FIELD_ORDER)
 
     # summary_ibm.md
-    (OUT_DIR / "summary_ibm.md").write_text(
+    write_text_versioned(
+        OUT_DIR / "summary_ibm.md",
         f"# IBM Hardware Summary\n\n"
         f"- Timestamp (UTC): {ts}\n"
         f"- Status: `blocked`\n"
         f"- Reason: {reason}\n",
-        encoding="utf-8",
     )
 
 

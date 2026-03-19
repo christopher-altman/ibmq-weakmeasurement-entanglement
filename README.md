@@ -317,8 +317,8 @@ Additional single-run diagnostics (from the most recent one-off sweep, not the f
 ### Reviewer notes
 
 - [`artifacts/summary_sim.md`](./artifacts/summary_sim.md) and [`artifacts/summary_ibm.md`](./artifacts/summary_ibm.md) are the headline summaries.
-- [`artifacts/run_manifest.json`](./artifacts/run_manifest.json) records aggregation commands, environments, and output lists.
-- [`artifacts/claims_map.json`](./artifacts/claims_map.json) contains evidence pointers, though one hardware entry still reflects an earlier failed Qiskit-missing attempt. The later `ibm_torino` matrix is better represented by the summary and manifest files.
+- [`artifacts/run_manifest.json`](./artifacts/run_manifest.json) is the public artifact manifest: published grids, aggregate row counts, output lists, and scope notes for the simulation and IBM matrices.
+- [`artifacts/claims_map.json`](./artifacts/claims_map.json) is the public claim-to-evidence map, with the IBM entry scoped explicitly as execution-stack validation rather than a direct hardware-side adaptive-advantage result.
 
 ---
 
@@ -382,7 +382,7 @@ python scripts/run_ibm_matrix.py
 python scripts/aggregate_ibm_artifacts.py
 ```
 
-The matrix runner prefers `ibm_torino` and falls back to `ibm_fez` or `ibm_marrakesh`. Per-config raw directories land under `artifacts/raw/ibm_runs/`; aggregated hardware artifacts go to `artifacts/`.
+The matrix runner prefers `ibm_torino` and falls back to `ibm_fez` or `ibm_marrakesh`. Per-config raw directories land under `artifacts/raw/ibm_runs/`; the published hardware metrics, summaries, figures, and sanitized public metadata land under `artifacts/`.
 
 ### Tests
 
@@ -416,7 +416,7 @@ Three companion scripts orchestrate multi-run experiments:
 
 ## Artifact Directory Layout
 
-The artifact tree is intentionally redundant: both per-run raw directories and aggregate top-level summaries are kept.
+Local execution keeps both per-run raw directories and top-level aggregate outputs. The published repository snapshot keeps the curated top-level artifacts plus sanitized public metadata. When a stable artifact is refreshed locally, the previous version is archived under `.internal/artifact_history/` and the new version is snapshotted there with a UTC timestamp before the stable filename is reused.
 
 | Path | Contents |
 | --- | --- |
@@ -426,11 +426,10 @@ The artifact tree is intentionally redundant: both per-run raw directories and a
 | `artifacts/summary_sim.md` | Headline simulation summary |
 | `artifacts/metrics_ibm.csv` | Aggregated IBM matrix (18 configs) |
 | `artifacts/summary_ibm.md` | Headline IBM hardware summary |
-| `artifacts/claims_map.json` | Claim-to-evidence map |
-| `artifacts/run_manifest.json` | Command and environment provenance |
-| `artifacts/ibm_cache/ibm_jobs.json` | Public aggregate IBM job manifest |
+| `artifacts/claims_map.json` | Public claim-to-evidence map |
+| `artifacts/run_manifest.json` | Public artifact manifest with grids, output lists, and scope notes |
 
-Note: the root `artifacts/` directory contains both aggregate outputs and last-run outputs, so not every file there has the same evidentiary status. Local execution also creates raw caches under `artifacts/raw/`, but those run-by-run directories are not part of the published repository snapshot.
+Note: the root `artifacts/` directory contains both aggregate outputs and last-run outputs, so not every file there has the same evidentiary status. Local execution also creates raw caches under `artifacts/raw/`, while archived superseded artifacts and raw operational provenance are retained under `.internal/`; those paths are not part of the published repository snapshot.
 
 ---
 
@@ -443,9 +442,8 @@ ibmq-weakmeasurement-entanglement/
 │   ├── metrics_sim.csv              # Simulation aggregate
 │   ├── metrics_ibm.csv              # IBM aggregate
 │   ├── summary.md / summary_sim.md / summary_ibm.md
-│   ├── run_manifest.json            # Provenance metadata
-│   ├── claims_map.json              # Claim-to-evidence map
-│   └── ibm_cache/                   # Public IBM job manifest
+│   ├── run_manifest.json            # Public artifact manifest
+│   └── claims_map.json              # Public claim-to-evidence map
 ├── docs/
 │   └── theory.md                    # Technical background and assumptions
 ├── notebooks/
@@ -487,7 +485,7 @@ ibmq-weakmeasurement-entanglement/
 
 ### Hardware nondeterminism
 
-IBM execution is inherently nondeterministic: queueing, calibration drift, and transient backend conditions change run-to-run. To make results tractable, transpiled circuits are hashed and their counts cached under `artifacts/ibm_cache/` and per-run directories. The committed hardware manifest records 2,052 IBM job IDs on `ibm_torino`.
+IBM execution is inherently nondeterministic: queueing, calibration drift, and transient backend conditions change run-to-run. To make results tractable, transpiled circuits are hashed and their counts cached in per-run directories under `artifacts/raw/ibm_runs/`. The published repository keeps only the aggregate IBM metrics, summaries, figures, and sanitized public metadata; raw job ledgers and per-circuit count caches remain local provenance and are not part of the published snapshot. The current public IBM manifest records the 18-config aggregate and total job count (2,052) on `ibm_torino`.
 
 ### Reproduction commands
 
@@ -509,7 +507,8 @@ python -m pytest
 
 - [`artifacts/run_manifest.json`](./artifacts/run_manifest.json)
 - [`artifacts/summary_sim.md`](./artifacts/summary_sim.md) / [`artifacts/summary_ibm.md`](./artifacts/summary_ibm.md)
-- [`artifacts/ibm_cache/ibm_jobs.json`](./artifacts/ibm_cache/ibm_jobs.json)
+- [`artifacts/claims_map.json`](./artifacts/claims_map.json)
+- Superseded local copies are archived under `.internal/artifact_history/` with UTC timestamp suffixes.
 - Raw run directories under `artifacts/raw/` are generated locally during execution and are not part of the published repository snapshot.
 
 ---

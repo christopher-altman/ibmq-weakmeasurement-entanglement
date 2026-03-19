@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from .artifact_history import write_csv_versioned, write_json_versioned, write_text_versioned
 from .data import (
     StateParams,
     allocate_shots_by_weights,
@@ -23,8 +24,6 @@ from .helpers import (
     parse_g_grid,
     seed_all,
     set_mpl_cache_if_needed,
-    write_csv,
-    write_json,
 )
 from .metrics import (
     coverage,
@@ -683,7 +682,7 @@ def _write_summary(
     for k, v in info["versions"].items():
         lines.append(f"- {k}: `{v}`")
 
-    (export_dir / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_text_versioned(export_dir / "summary.md", "\n".join(lines) + "\n")
 
 
 def run_sweep(cfg: RunConfig) -> None:
@@ -737,7 +736,7 @@ def run_sweep(cfg: RunConfig) -> None:
     metrics_rows.extend(_tomography_rows(run_id=run_id, test_records=test_records, cfg=cfg))
 
     _rows_fill_rmse(metrics_rows)
-    write_csv(cfg.export_dir / "metrics.csv", metrics_rows, METRIC_COLUMNS)
+    write_csv_versioned(cfg.export_dir / "metrics.csv", metrics_rows, METRIC_COLUMNS)
 
     sample_rows = _sample_efficiency_rows(test_records=test_records, cfg=cfg)
 
@@ -746,7 +745,7 @@ def run_sweep(cfg: RunConfig) -> None:
     plot_error_comparison(metrics_rows=metrics_rows, export_dir=cfg.export_dir)
     plot_shift_abstention(metrics_rows=metrics_rows, export_dir=cfg.export_dir)
 
-    write_json(
+    write_json_versioned(
         cfg.export_dir / "ibm_jobs.json",
         {
             "backend_type": "sim",
@@ -892,9 +891,9 @@ def run_hardware(cfg: RunConfig) -> None:
         )
 
     _rows_fill_rmse(metrics_rows)
-    write_csv(cfg.export_dir / "metrics.csv", metrics_rows, METRIC_COLUMNS)
+    write_csv_versioned(cfg.export_dir / "metrics.csv", metrics_rows, METRIC_COLUMNS)
 
-    write_json(
+    write_json_versioned(
         cfg.export_dir / "ibm_jobs.json",
         {
             "backend_type": "ibm",

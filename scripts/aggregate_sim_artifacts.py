@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,8 +13,12 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 RAW_ROOT = ROOT / 'artifacts' / 'raw' / 'sim_sweeps'
 OUT_DIR = ROOT / 'artifacts'
+
+from src.artifact_history import save_figure_versioned, write_csv_versioned, write_text_versioned
+from src.public_artifacts import update_public_claims, update_public_manifest
 
 SHOTS_GRID = [128, 256, 512, 1024, 2048, 4096, 8192]
 SEEDS = [0, 1, 2, 3, 4]
@@ -54,11 +59,7 @@ def load_rows() -> list[dict[str, object]]:
 
 def write_metrics(rows: list[dict[str, object]]) -> Path:
     out = OUT_DIR / 'metrics_sim.csv'
-    with out.open('w', encoding='utf-8', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=FIELD_ORDER)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({k: row.get(k, '') for k in FIELD_ORDER})
+    write_csv_versioned(out, rows, FIELD_ORDER)
     return out
 
 
@@ -103,7 +104,7 @@ def make_figures(rows: list[dict[str, object]]) -> tuple[Path, Path]:
     plt.legend()
     plt.tight_layout()
     fig1 = OUT_DIR / 'fig_error_vs_shots_sim.png'
-    plt.savefig(fig1, dpi=180)
+    save_figure_versioned(plt.gcf(), fig1, dpi=180)
     plt.close()
 
     cal_methods = ['adaptive_ig', 'fixed_particle', 'fixed_nn_conformal', 'fixed_nn_naive']
@@ -131,7 +132,7 @@ def make_figures(rows: list[dict[str, object]]) -> tuple[Path, Path]:
     plt.legend(loc='lower right', fontsize=8)
     plt.tight_layout()
     fig2 = OUT_DIR / 'fig_calibration_sim.png'
-    plt.savefig(fig2, dpi=180)
+    save_figure_versioned(plt.gcf(), fig2, dpi=180)
     plt.close()
 
     return fig1, fig2
@@ -211,8 +212,123 @@ def write_summary(rows: list[dict[str, object]]) -> Path:
     lines.append('- `artifacts/metrics_sim.csv`')
     lines.append('- `artifacts/fig_error_vs_shots_sim.png`')
     lines.append('- `artifacts/fig_calibration_sim.png`')
-    out.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    write_text_versioned(out, '\n'.join(lines) + '\n')
     return out
+
+
+def update_public_metadata(rows: list[dict[str, object]]) -> None:
+    rows_test = [r for r in rows if r.get('split') == 'test']
+    adaptive_sub = [r for r in rows_test if r['method'] == 'adaptive_ig']
+    fixed_sub = [r for r in rows_test if r['method'] == 'fixed_particle']
+
+    adaptive_cov90 = float('nan')
+    fixed_cov90 = float('nan')
+    if adaptive_sub:
+        y = np.array([float(str(r['c_true'])) for r in adaptive_sub], dtype=float)
+        lo90 = np.array([float(str(r['ci90_low'])) for r in adaptive_sub], dtype=float)
+        hi90 = np.array([float(str(r['ci90_high'])) for r in adaptive_sub], dtype=float)
+        adaptive_cov90 = float(np.mean((y >= lo90) & (y <= hi90)))
+    if fixed_sub:
+        y = np.array([float(str(r['c_true'])) for r in fixed_sub], dtype=float)
+        lo90 = np.array([float(str(r['ci90_low'])) for r in fixed_sub], dtype=float)
+        hi90 = np.array([float(str(r['ci90_high'])) for r in fixed_sub], dtype=float)
+        fixed_cov90 = float(np.mean((y >= lo90) & (y <= hi90)))
+
+    eps = 0.05
+    shot_idx = {s: i for i, s in enumerate(SHOTS_GRID)}
+    bucket = defaultdict(lambda: [float('inf')] * len(SHOTS_GRID))
+    for r in rows_test:
+        method = str(r['method'])
+        if method not in ('adaptive_ig', 'fixed_particle'):
+            continue
+        key = (int(float(str(r['seed']))), str(r['state_id']), method)
+        s = int(float(str(r['shots'])))
+        i = shot_idx[s]
+        bucket[key][i] = min(bucket[key][i], float(str(r['abs_err_c'])))
+
+    def shots_to_eps(arr: list[float]) -> int:
+        for i, err in enumerate(arr):
+            if err <= eps:
+                return SHOTS_GRID[i]
+        return SHOTS_GRID[-1]
+
+    adaptive_vals = []
+    fixed_vals = []
+    for (_, _, method), arr in bucket.items():
+        st = shots_to_eps(arr)
+        if method == 'adaptive_ig':
+            adaptive_vals.append(st)
+        else:
+            fixed_vals.append(st)
+
+    med_adapt = float(np.median(adaptive_vals)) if adaptive_vals else float('nan')
+    med_fixed = float(np.median(fixed_vals)) if fixed_vals else float('nan')
+    ratio = (med_fixed / med_adapt) if adaptive_vals and fixed_vals and med_adapt > 0 else float('nan')
+
+    update_public_manifest('simulation_matrix', {
+        'backend': 'sim',
+        'seeds': SEEDS,
+        'shots_grid': SHOTS_GRID,
+        'g_grid': G_GRID,
+        'n_runs': len(SEEDS) * len(SHOTS_GRID),
+        'n_metric_rows': len(rows),
+        'outputs': [
+            'artifacts/metrics_sim.csv',
+            'artifacts/summary_sim.md',
+            'artifacts/fig_error_vs_shots_sim.png',
+            'artifacts/fig_calibration_sim.png',
+        ],
+        'scope_note': (
+            'Headline simulation aggregate used for the sample-efficiency and '
+            'coverage claims in the public README and manuscript materials.'
+        ),
+    })
+    update_public_claims('simulation', [
+        {
+            'claim_id': 'C1_adaptive_beats_fixed_sample_efficiency_sim',
+            'statement': (
+                'Across the 35-run simulation matrix, adaptive IG reaches '
+                '|Ĉ-C| <= 0.05 at a median shot budget of '
+                f'{med_adapt:.1f}, versus {med_fixed:.1f} for the fixed-particle '
+                f'baseline (fixed/adaptive ratio={ratio:.2f}).'
+            ),
+            'evidence': [
+                'artifacts/metrics_sim.csv',
+                'artifacts/summary_sim.md',
+                'artifacts/fig_error_vs_shots_sim.png',
+            ],
+            'reproduce': [
+                'python scripts/run_sim_matrix.py',
+                'python scripts/aggregate_sim_artifacts.py',
+            ],
+            'notes': (
+                'Computed by scanning the committed shot ladder per '
+                '(seed, state_id) and recording the first shot where '
+                'abs_err_c <= 0.05.'
+            ),
+        },
+        {
+            'claim_id': 'C2_conformal_calibration_sim',
+            'statement': (
+                'In the headline simulation aggregate, adaptive IG attains '
+                f'empirical 90% coverage of {adaptive_cov90:.3f}; the fixed-particle '
+                f'baseline attains {fixed_cov90:.3f}.'
+            ),
+            'evidence': [
+                'artifacts/metrics_sim.csv',
+                'artifacts/summary_sim.md',
+                'artifacts/fig_calibration_sim.png',
+            ],
+            'reproduce': [
+                'python scripts/run_sim_matrix.py',
+                'python scripts/aggregate_sim_artifacts.py',
+            ],
+            'notes': (
+                'Coverage is evaluated on the simulation test rows using the '
+                'published ci90 interval columns against c_true.'
+            ),
+        },
+    ])
 
 
 def main() -> None:
@@ -220,6 +336,7 @@ def main() -> None:
     metrics = write_metrics(rows)
     fig1, fig2 = make_figures(rows)
     summary = write_summary(rows)
+    update_public_metadata(rows)
     print(metrics)
     print(fig1)
     print(fig2)
