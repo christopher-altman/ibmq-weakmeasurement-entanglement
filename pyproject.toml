@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ibmq-weakmeasurement-entanglement-active-design"
+version = "0.1.0"
+description = "Adaptive weak-measurement experiment design with conformal-calibrated uncertainty for entanglement on simulation and IBM Quantum hardware"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Christopher Altman" }
+]
+dependencies = [
+  "numpy",
+  "scipy",
+  "matplotlib",
+  "torch",
+  "pandas",
+  "tqdm",
+  "qiskit",
+  "qiskit-aer",
+  "qiskit-ibm-runtime"
+]
+
+[tool.setuptools]
+packages = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
