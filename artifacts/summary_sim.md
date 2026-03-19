@@ -1,6 +1,6 @@
 # Simulation Experiment Summary
 
-- Timestamp (UTC): 2026-02-16T08:46:30.955707+00:00
+- Timestamp (UTC): 2026-03-19T15:20:38.288721+00:00
 - Backend: `sim`
 - Seeds: `[0, 1, 2, 3, 4]`
 - Shots grid: `[128, 256, 512, 1024, 2048, 4096, 8192]`

@@ -1,24 +1,24 @@
 # Run Summary
 
-- Timestamp (UTC): 2026-02-15T16:05:47.944707+00:00
+- Timestamp (UTC): 2026-03-19T15:17:49.243549+00:00
 - Mode: `sweep`
 - Backend: `sim`
 - Noise: `ideal`
-- Seed: `11`
+- Seed: `7`
 
 ## Key Metrics
-- `adaptive_ig`: MAE(C)=0.0108, RMSE(C)=0.0146, MAE(N)=0.0020
-- `adaptive_ig_scaled`: MAE(C)=0.0108, RMSE(C)=0.0146, MAE(N)=0.0020
-- `fixed_nn_conformal`: MAE(C)=0.1378, RMSE(C)=0.1406, MAE(N)=0.0572
-- `fixed_nn_naive`: MAE(C)=0.1378, RMSE(C)=0.1406, MAE(N)=0.0572
-- `fixed_nn_scaled_conformal`: MAE(C)=0.1378, RMSE(C)=0.1406, MAE(N)=0.0572
-- `fixed_particle`: MAE(C)=0.1086, RMSE(C)=0.1513, MAE(N)=0.0392
-- `fixed_particle_scaled`: MAE(C)=0.1086, RMSE(C)=0.1513, MAE(N)=0.0392
-- `tomography_baseline`: MAE(C)=0.0611, RMSE(C)=0.0663, MAE(N)=0.0102
+- `adaptive_ig`: MAE(C)=0.0208, RMSE(C)=0.0324, MAE(N)=0.0100
+- `adaptive_ig_scaled`: MAE(C)=0.0208, RMSE(C)=0.0324, MAE(N)=0.0100
+- `fixed_nn_conformal`: MAE(C)=0.0671, RMSE(C)=0.0835, MAE(N)=0.0404
+- `fixed_nn_naive`: MAE(C)=0.0671, RMSE(C)=0.0835, MAE(N)=0.0404
+- `fixed_nn_scaled_conformal`: MAE(C)=0.0671, RMSE(C)=0.0835, MAE(N)=0.0404
+- `fixed_particle`: MAE(C)=0.0383, RMSE(C)=0.0693, MAE(N)=0.0184
+- `fixed_particle_scaled`: MAE(C)=0.0383, RMSE(C)=0.0693, MAE(N)=0.0184
+- `tomography_baseline`: MAE(C)=0.0100, RMSE(C)=0.0168, MAE(N)=0.0038
 
 ## Claim Checks
-- H1 calibration (90% target, method `adaptive_ig`): empirical=1.000 -> PASS
-- H2 sample efficiency (median shots fixed=112.0, adaptive=100.0): PASS
+- H1 calibration (90% target, method `adaptive_ig`): empirical=0.879 -> PASS
+- H2 sample efficiency (median shots fixed=775.0, adaptive=250.0): PASS
 - H3 hardware robustness: hardware rows unavailable in this run -> FAIL/PENDING
 
 ## Reproducibility Checklist
@@ -30,12 +30,12 @@
   - `python -m pytest`
 
 ## Environment
-- Python: `3.14.2`
+- Python: `3.10.11`
 - numpy: `1.26.4`
-- scipy: `1.17.0`
+- scipy: `1.14.1`
 - matplotlib: `3.10.7`
-- torch: `missing`
-- pandas: `missing`
-- qiskit: `missing`
-- qiskit_aer: `missing`
-- qiskit_ibm_runtime: `missing`
+- torch: `2.9.1`
+- pandas: `1.5.3`
+- qiskit: `2.3.1`
+- qiskit_aer: `0.17.2`
+- qiskit_ibm_runtime: `0.45.1`
