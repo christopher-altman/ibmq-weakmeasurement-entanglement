@@ -43,9 +43,9 @@ Quantifying two-qubit entanglement usually requires reconstructing a full densit
 
 The experiment uses three qubits. Qubits `A` and `B` hold the target state; qubit `P` serves as a discrete pointer ancilla. A tunable interaction
 
-$$
+```math
 U(g)=\exp\!\left(-i\frac{g}{2}\,X_B \otimes Y_P\right)
-$$
+```
 
 couples the system to the pointer. After a local compression step on `A`, the analysis postselects on `A = 0`, conditions on `B`, and extracts pointer-basis expectations that act as discrete analogs of weak-value quadratures. The resulting statistics are sufficient to identify the state parameters — and therefore the concurrence — for the benchmark family studied here.
 
@@ -91,7 +91,7 @@ A point prediction alone isn't enough once postselection becomes sparse or hardw
 
 The benchmark family used throughout the repository is
 
-$$
+```math
 \rho_{AB}(p,\theta)
 =
 p\lvert\psi_\theta\rangle\langle\psi_\theta\rvert
@@ -101,7 +101,7 @@ p\lvert\psi_\theta\rangle\langle\psi_\theta\rvert
 \lvert\psi_\theta\rangle
 =
 \cos\theta\lvert 00\rangle+\sin\theta\lvert 11\rangle,
-$$
+```
 
 with $p \in [0,1]$ and $\theta \in [0, \pi/4]$. The parameter `p` controls the purity (and hence the entanglement), while `θ` sets the Schmidt coefficient balance. This family is rich enough to span separable-to-maximally-entangled states, yet structured enough that weak-measurement statistics can identify the parameters.
 
@@ -109,18 +109,18 @@ with $p \in [0,1]$ and $\theta \in [0, \pi/4]$. The parameter `p` controls the p
 
 The pointer ancilla starts in $|0\rangle$, and the weak interaction is
 
-$$
+```math
 U(g)=\exp\!\left(-i\frac{g}{2}\,X_B\otimes Y_P\right).
-$$
+```
 
 After applying $H_A$, the protocol postselects on $A = 0$, equivalent to postselection onto $|+\rangle$ in the original basis. The resulting conditional local state on `B` is
 
-$$
+```math
 \rho_B^{(+)}
 =
 \frac{\langle +|\rho_{AB}|+\rangle}
 {\mathrm{Tr}(\langle +|\rho_{AB}|+\rangle)}.
-$$
+```
 
 This conditional state is the object whose matrix elements encode the entanglement information.
 
@@ -128,20 +128,20 @@ This conditional state is the object whose matrix elements encode the entangleme
 
 From terminal counts over `(A, B, P)`, the code extracts postselection rates
 
-$$
+```math
 P(A{=}0,\,B{=}0), \qquad P(A{=}0,\,B{=}1),
-$$
+```
 
 and conditional pointer expectations
 
-$$
+```math
 m_k^{(X)}=\mathbb{E}[(-1)^P \mid A{=}0,\,B{=}k,\;\text{pointer in }X],
-$$
+```
 
-$$
+```math
 m_k^{(Y)}=\mathbb{E}[(-1)^P \mid A{=}0,\,B{=}k,\;\text{pointer in }Y],
 \qquad k\in\{0,1\}.
-$$
+```
 
 These are the feature blocks assembled by [`aggregate_feature_vector`](./src/weak_measurement.py). Across a design grid, they form the representation consumed by both the neural-network baseline and the adaptive particle estimator.
 
@@ -149,30 +149,30 @@ These are the feature blocks assembled by [`aggregate_feature_vector`](./src/wea
 
 For the benchmark family, the conditional local state takes the closed form
 
-$$
+```math
 \rho_B^{(+)}
 =
 \begin{pmatrix}
 \cos^2\theta & p\cos\theta\sin\theta \\
 p\cos\theta\sin\theta & \sin^2\theta
 \end{pmatrix},
-$$
+```
 
 which yields weak-value-like ratios
 
-$$
+```math
 w_0=\frac{\rho_{10}}{\rho_{00}}=p\tan\theta,
 \qquad
 w_1=\frac{\rho_{01}}{\rho_{11}}=p\cot\theta.
-$$
+```
 
 Inverting these gives
 
-$$
+```math
 p=\sqrt{w_0\,w_1},
 \qquad
 \tan^2\theta=\frac{w_0}{w_1}.
-$$
+```
 
 So $(p, \theta)$ — and therefore concurrence — are identifiable from postselected weak information, up to expected boundary degeneracies. This algebraic fact is the core reason the benchmark family is a sensible testbed for compressed entanglement estimation.
 
@@ -180,17 +180,17 @@ So $(p, \theta)$ — and therefore concurrence — are identifiable from postsel
 
 Adaptive setting selection uses an information-gain score over the particle ensemble:
 
-$$
+```math
 \mathrm{IG}(s)=H\!\left(\sum_i w_i\,p(y\mid\vartheta_i,s)\right)-\sum_i w_i\,H\!\left(p(y\mid\vartheta_i,s)\right),
-$$
+```
 
 where $\vartheta_i = (p_i, \theta_i)$ are particles and $s$ encodes the candidate coupling and pointer basis.
 
 For uncertainty quantification, split conformal calibration computes residuals $r_i = |y_i - \hat{f}(x_i)|$ and produces intervals
 
-$$
+```math
 \hat{C}(x) \pm q_{1-\alpha},
-$$
+```
 
 where $q_{1-\alpha}$ is the $\lceil(n_{\mathrm{cal}}+1)(1-\alpha)\rceil$-th order statistic of the calibration residuals. The locally-scaled variant replaces $r_i$ with $|y_i - \hat{f}(x_i)| / \hat{s}(x_i)$, yielding adaptive-width intervals. The repo also tracks negativity $\mathcal{N}(\rho) = \sum_{\lambda_i < 0} |\lambda_i(\rho^{T_B})|$ as a secondary entanglement summary.
 
