@@ -1,42 +1,54 @@
-[
-  {
-    "claim_id": "C1_adaptive_beats_fixed_sample_efficiency_sim",
-    "statement": "Adaptive IG reaches |\u0108-C| <= 0.05 with median-shot improvement over fixed policy (ratio fixed/adaptive=4.00).",
-    "evidence": [
-      "artifacts/metrics_sim.csv",
-      "artifacts/fig_error_vs_shots_sim.png",
-      "artifacts/summary_sim.md"
+{
+  "last_updated_utc": "2026-03-19T16:47:21.361934+00:00",
+  "schema": "public-claims-v1",
+  "sections": {
+    "hardware": [
+      {
+        "claim_id": "C3_ibm_execution_stack_validation",
+        "evidence": [
+          "artifacts/metrics_ibm.csv",
+          "artifacts/summary_ibm.md",
+          "artifacts/fig_error_vs_shots_ibm.png",
+          "artifacts/fig_sim_vs_ibm_gap.png",
+          "artifacts/run_manifest.json"
+        ],
+        "notes": "This is an execution-stack validation claim. The current IBM concurrence and negativity values are reconstructed through a simulation-side proxy model and should not be read as a direct hardware-side adaptive-advantage result.",
+        "reproduce": [
+          "python scripts/run_ibm_matrix.py",
+          "python scripts/aggregate_ibm_artifacts.py"
+        ],
+        "statement": "The published IBM aggregate confirms execution of the qubit-native weak-measurement workflow on ibm_torino across 18 completed configurations, 2052 total IBM jobs, and 108 aggregate metric rows."
+      }
     ],
-    "reproduce": [
-      "python -m src.main --mode sweep --backend sim --noise ideal --policy adaptive --g_grid 0.00,0.10,0.20,0.35,0.50,0.70,0.90 --shots <SHOT> --seed <SEED> --n_train 40 --n_cal 10 --n_test 12 --rounds 6 --export_dir artifacts/raw/sim_sweeps/seed_<SEED>_shots_<SHOT>"
-    ],
-    "notes": "Computed by scanning shot ladder per (seed,state_id) and taking first shot where abs_err_c <= epsilon."
-  },
-  {
-    "claim_id": "C2_conformal_calibration_sim",
-    "statement": "Adaptive IG empirical coverage: cov90=0.976, cov95=0.976.",
-    "evidence": [
-      "artifacts/metrics_sim.csv",
-      "artifacts/fig_calibration_sim.png",
-      "artifacts/summary_sim.md"
-    ],
-    "reproduce": [
-      "python -m src.main --mode sweep --backend sim --noise ideal --policy adaptive --g_grid 0.00,0.10,0.20,0.35,0.50,0.70,0.90 --shots <SHOT> --seed <SEED> --n_train 40 --n_cal 10 --n_test 12 --rounds 6 --export_dir artifacts/raw/sim_sweeps/seed_<SEED>_shots_<SHOT>"
-    ],
-    "notes": "Coverage computed from ci90/ci95 bounds against c_true over all simulation test rows."
-  },
-  {
-    "claim_id": "C3_hardware_execution_status",
-    "statement": "IBM hardware run was attempted but blocked by unavailable Qiskit runtime dependencies in the execution environment.",
-    "evidence": [
-      "artifacts/summary_ibm.md",
-      "artifacts/metrics_ibm.csv",
-      "artifacts/ibm_cache/ibm_jobs.json",
-      "artifacts/raw/ibm_runs/hardware_attempt.log"
-    ],
-    "reproduce": [
-      "python -m src.main --mode hardware_run --backend ibm --ibm_backend_name ibm_kyoto --policy adaptive --g_grid 0.10,0.35,0.50 --shots 1024 --seed 0 --export_dir artifacts/raw/ibm_runs/adaptive_s0_sh1024"
-    ],
-    "notes": "Failure occurs before submission, so no IBM job IDs were created."
+    "simulation": [
+      {
+        "claim_id": "C1_adaptive_beats_fixed_sample_efficiency_sim",
+        "evidence": [
+          "artifacts/metrics_sim.csv",
+          "artifacts/summary_sim.md",
+          "artifacts/fig_error_vs_shots_sim.png"
+        ],
+        "notes": "Computed by scanning the committed shot ladder per (seed, state_id) and recording the first shot where abs_err_c <= 0.05.",
+        "reproduce": [
+          "python scripts/run_sim_matrix.py",
+          "python scripts/aggregate_sim_artifacts.py"
+        ],
+        "statement": "Across the 35-run simulation matrix, adaptive IG reaches |Ĉ-C| <= 0.05 at a median shot budget of 128.0, versus 512.0 for the fixed-particle baseline (fixed/adaptive ratio=4.00)."
+      },
+      {
+        "claim_id": "C2_conformal_calibration_sim",
+        "evidence": [
+          "artifacts/metrics_sim.csv",
+          "artifacts/summary_sim.md",
+          "artifacts/fig_calibration_sim.png"
+        ],
+        "notes": "Coverage is evaluated on the simulation test rows using the published ci90 interval columns against c_true.",
+        "reproduce": [
+          "python scripts/run_sim_matrix.py",
+          "python scripts/aggregate_sim_artifacts.py"
+        ],
+        "statement": "In the headline simulation aggregate, adaptive IG attains empirical 90% coverage of 0.976; the fixed-particle baseline attains 0.936."
+      }
+    ]
   }
-]
+}
