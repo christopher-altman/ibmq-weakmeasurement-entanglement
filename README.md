@@ -1,4 +1,4 @@
-# ibmq-weakmeasurement-entanglement-active-design
+# IBM Weak Measurement Entanglement Active Design
 
 **Thesis:** Adaptive weak-measurement experiment design with conformal-calibrated uncertainty for concurrence (and negativity), with IBM Quantum hardware validation via Qiskit Runtime against simulation and tomography baselines.
 
