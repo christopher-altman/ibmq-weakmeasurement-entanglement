@@ -7,8 +7,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="artifacts/readme/fig_error_vs_shots_sim.png">
-  <img alt="Aggregated simulation concurrence error versus shot budget across adaptive, fixed-particle, fixed-NN, and tomography baselines" src="artifacts/fig_error_vs_shots_sim.png">
+  <source media="(prefers-color-scheme: dark)" srcset="artifacts/readme/fig_error_vs_shots_sim_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="artifacts/readme/fig_error_vs_shots_sim_light.png">
+  <img alt="Aggregated simulation concurrence error versus shot budget across adaptive, fixed-particle, fixed-NN, and tomography baselines" src="artifacts/readme/fig_error_vs_shots_sim_light.png">
 </picture>
 
 *Concurrence MAE versus shot budget across the 35-run simulation matrix. The adaptive information-gain policy reaches lower error at lower shot budgets than all fixed weak-design baselines.*

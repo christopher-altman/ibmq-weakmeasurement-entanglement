@@ -63,7 +63,10 @@ artifacts/*
 !artifacts/fig_error_comparison.png
 !artifacts/readme/
 artifacts/readme/*
-!artifacts/readme/fig_error_vs_shots_sim.png
+!artifacts/readme/fig_error_vs_shots_sim_dark.png
+!artifacts/readme/fig_error_vs_shots_sim_light.png
+!artifacts/readme/fig_error_vs_shots_sim_dark.jpg
+!artifacts/readme/fig_error_vs_shots_sim_light.jpg
 !artifacts/ibm_cache/
 artifacts/ibm_cache/*
 !artifacts/ibm_cache/ibm_jobs.json
