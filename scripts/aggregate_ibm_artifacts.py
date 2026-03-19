@@ -293,9 +293,9 @@ def main():
     summary_path = write_summary(all_rows, backend_name, runs, seeds_used, shots_used, policies_used)
     print(f"Wrote {summary_path}")
 
-    # Update experiment_run_report.md
+    # Update the internal experiment run report
     update_experiment_report(all_rows, runs, backend_name)
-    print("Updated docs/experiment_run_report.md")
+    print("Updated .internal/run-notes/experiment_run_report.md")
 
     # Update run_manifest.json
     update_manifest(all_rows, runs, backend_name, seeds_used, shots_used, policies_used)
@@ -499,8 +499,8 @@ def write_summary(ibm_rows, backend_name, runs, seeds, shots_grid, policies):
 
 
 def update_experiment_report(ibm_rows, runs, backend_name):
-    """Append IBM Hardware section to experiment_run_report.md."""
-    report_path = ROOT / "docs" / "experiment_run_report.md"
+    """Append IBM hardware details to the internal experiment run report."""
+    report_path = ROOT / ".internal" / "run-notes" / "experiment_run_report.md"
     existing = report_path.read_text(encoding="utf-8") if report_path.exists() else ""
 
     # Remove any previous IBM Hardware section if present

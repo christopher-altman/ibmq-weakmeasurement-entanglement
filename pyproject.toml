@@ -23,6 +23,11 @@ dependencies = [
   "qiskit-ibm-runtime"
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest"
+]
+
 [tool.setuptools]
 packages = []
 

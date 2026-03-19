@@ -1,6 +1,7 @@
 # OS and local tooling state
 .DS_Store
 **/settings.local.json
+.internal/
 
 # Virtual environments
 .venv/
