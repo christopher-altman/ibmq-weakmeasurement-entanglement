@@ -61,6 +61,9 @@ artifacts/*
 !artifacts/fig_shift_abstention.png
 !artifacts/fig_calibration.png
 !artifacts/fig_error_comparison.png
+!artifacts/readme/
+artifacts/readme/*
+!artifacts/readme/fig_error_vs_shots_sim.png
 !artifacts/ibm_cache/
 artifacts/ibm_cache/*
 !artifacts/ibm_cache/ibm_jobs.json
