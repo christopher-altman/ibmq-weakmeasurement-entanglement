@@ -424,11 +424,9 @@ The artifact tree is intentionally redundant: both per-run raw directories and a
 | `artifacts/summary_ibm.md` | Headline IBM hardware summary |
 | `artifacts/claims_map.json` | Claim-to-evidence map |
 | `artifacts/run_manifest.json` | Command and environment provenance |
-| `artifacts/ibm_cache/` | Aggregated IBM job list, backend list, cached counts |
-| `artifacts/raw/sim_sweeps/` | Per-seed, per-shot simulation runs |
-| `artifacts/raw/ibm_runs/` | Per-config IBM runs with metadata and count caches |
+| `artifacts/ibm_cache/ibm_jobs.json` | Public aggregate IBM job manifest |
 
-Note: the root `artifacts/` directory contains both aggregate outputs and last-run outputs, so not every file there has the same evidentiary status.
+Note: the root `artifacts/` directory contains both aggregate outputs and last-run outputs, so not every file there has the same evidentiary status. Local execution also creates raw caches under `artifacts/raw/`, but those run-by-run directories are not part of the published repository snapshot.
 
 ---
 
@@ -443,8 +441,7 @@ ibmq-weakmeasurement-entanglement/
 │   ├── summary.md / summary_sim.md / summary_ibm.md
 │   ├── run_manifest.json            # Provenance metadata
 │   ├── claims_map.json              # Claim-to-evidence map
-│   ├── ibm_cache/                   # Backend listings, job IDs, counts
-│   └── raw/                         # Per-run directories
+│   └── ibm_cache/                   # Public IBM job manifest
 ├── docs/
 │   └── theory.md                    # Technical background and assumptions
 ├── notebooks/
@@ -509,7 +506,7 @@ python -m pytest
 - [`artifacts/run_manifest.json`](./artifacts/run_manifest.json)
 - [`artifacts/summary_sim.md`](./artifacts/summary_sim.md) / [`artifacts/summary_ibm.md`](./artifacts/summary_ibm.md)
 - [`artifacts/ibm_cache/ibm_jobs.json`](./artifacts/ibm_cache/ibm_jobs.json)
-- [`artifacts/raw/sim_sweeps/`](./artifacts/raw/sim_sweeps/) / [`artifacts/raw/ibm_runs/`](./artifacts/raw/ibm_runs/)
+- Raw run directories under `artifacts/raw/` are generated locally during execution and are not part of the published repository snapshot.
 
 ---
 

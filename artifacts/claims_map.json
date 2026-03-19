@@ -1,0 +1,42 @@
+[
+  {
+    "claim_id": "C1_adaptive_beats_fixed_sample_efficiency_sim",
+    "statement": "Adaptive IG reaches |\u0108-C| <= 0.05 with median-shot improvement over fixed policy (ratio fixed/adaptive=4.00).",
+    "evidence": [
+      "artifacts/metrics_sim.csv",
+      "artifacts/fig_error_vs_shots_sim.png",
+      "artifacts/summary_sim.md"
+    ],
+    "reproduce": [
+      "python -m src.main --mode sweep --backend sim --noise ideal --policy adaptive --g_grid 0.00,0.10,0.20,0.35,0.50,0.70,0.90 --shots <SHOT> --seed <SEED> --n_train 40 --n_cal 10 --n_test 12 --rounds 6 --export_dir artifacts/raw/sim_sweeps/seed_<SEED>_shots_<SHOT>"
+    ],
+    "notes": "Computed by scanning shot ladder per (seed,state_id) and taking first shot where abs_err_c <= epsilon."
+  },
+  {
+    "claim_id": "C2_conformal_calibration_sim",
+    "statement": "Adaptive IG empirical coverage: cov90=0.976, cov95=0.976.",
+    "evidence": [
+      "artifacts/metrics_sim.csv",
+      "artifacts/fig_calibration_sim.png",
+      "artifacts/summary_sim.md"
+    ],
+    "reproduce": [
+      "python -m src.main --mode sweep --backend sim --noise ideal --policy adaptive --g_grid 0.00,0.10,0.20,0.35,0.50,0.70,0.90 --shots <SHOT> --seed <SEED> --n_train 40 --n_cal 10 --n_test 12 --rounds 6 --export_dir artifacts/raw/sim_sweeps/seed_<SEED>_shots_<SHOT>"
+    ],
+    "notes": "Coverage computed from ci90/ci95 bounds against c_true over all simulation test rows."
+  },
+  {
+    "claim_id": "C3_hardware_execution_status",
+    "statement": "IBM hardware run was attempted but blocked by unavailable Qiskit runtime dependencies in the execution environment.",
+    "evidence": [
+      "artifacts/summary_ibm.md",
+      "artifacts/metrics_ibm.csv",
+      "artifacts/ibm_cache/ibm_jobs.json",
+      "artifacts/raw/ibm_runs/hardware_attempt.log"
+    ],
+    "reproduce": [
+      "python -m src.main --mode hardware_run --backend ibm --ibm_backend_name ibm_kyoto --policy adaptive --g_grid 0.10,0.35,0.50 --shots 1024 --seed 0 --export_dir artifacts/raw/ibm_runs/adaptive_s0_sh1024"
+    ],
+    "notes": "Failure occurs before submission, so no IBM job IDs were created."
+  }
+]

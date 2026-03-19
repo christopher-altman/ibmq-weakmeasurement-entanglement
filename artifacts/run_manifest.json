@@ -1,0 +1,100 @@
+{
+  "commands_run": [
+    "ls -la",
+    "find . -maxdepth 3 -print | sort",
+    "python --version && sed -n ... pyproject.toml src/main.py",
+    "python3.11 -m venv --system-site-packages .venv311_ssp && pip install --no-build-isolation --no-deps -e .",
+    "python3.14 -m venv --system-site-packages .venv314_ssp && pip install --no-build-isolation --no-deps -e .",
+    "python -m pytest",
+    "batch simulation sweeps via in-process RunConfig/run_sweep loop (seeds 0-4, shots 128..8192)",
+    "python scripts/run_sim_matrix.py",
+    "python scripts/aggregate_sim_artifacts.py",
+    "python -m src.main --mode hardware_run --backend ibm --ibm_backend_name ibm_kyoto --policy adaptive --g_grid 0.10,0.35,0.50 --shots 1024 --seed 0 --n_train 40 --n_cal 10 --n_test 12 --rounds 6 --export_dir artifacts/raw/ibm_runs/adaptive_s0_sh1024"
+  ],
+  "env": {
+    "modes": {
+      "MPLBACKEND": "Agg",
+      "MPLCONFIGDIR": "/tmp/mplconfig",
+      "XDG_CACHE_HOME": "/tmp"
+    },
+    "token_source": "macOS Keychain item IBM_QUANTUM_TOKEN (value never logged)",
+    "venv": ".venv314_ssp"
+  },
+  "ibm_hardware_run": {
+    "backend": "ibm_torino",
+    "commands_run": [
+      "python scripts/run_ibm_matrix.py",
+      "python scripts/aggregate_ibm_artifacts.py"
+    ],
+    "g_grid": [
+      0.1,
+      0.35,
+      0.5
+    ],
+    "n_completed_configs": 18,
+    "n_jobs": 2052,
+    "n_metric_rows": 108,
+    "n_total_configs": 18,
+    "outputs": [
+      "artifacts/metrics_ibm.csv",
+      "artifacts/summary_ibm.md",
+      "artifacts/fig_error_vs_shots_ibm.png",
+      "artifacts/fig_sim_vs_ibm_gap.png",
+      "artifacts/ibm_cache/ibm_jobs.json",
+      "artifacts/ibm_cache/counts_*.json"
+    ],
+    "package_versions": {
+      "matplotlib": "3.10.8",
+      "numpy": "2.4.2",
+      "pandas": "3.0.0",
+      "qiskit": "2.3.0",
+      "qiskit_aer": "0.17.2",
+      "qiskit_ibm_runtime": "0.45.1",
+      "scipy": "1.17.0",
+      "torch": "2.10.0"
+    },
+    "policies": [
+      "adaptive",
+      "fixed"
+    ],
+    "python": "3.11.14",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "shots_grid": [
+      1024,
+      4096,
+      8192
+    ],
+    "timestamp_utc": "2026-02-19T21:45:14.022950+00:00",
+    "venv": ".venv_ibm"
+  },
+  "machine": {
+    "platform": "macOS-26.3-arm64-arm-64bit-Mach-O",
+    "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.6.3.2)]"
+  },
+  "outputs": [
+    "artifacts/metrics_sim.csv",
+    "artifacts/summary_sim.md",
+    "artifacts/fig_error_vs_shots_sim.png",
+    "artifacts/fig_calibration_sim.png",
+    "artifacts/metrics_ibm.csv",
+    "artifacts/summary_ibm.md",
+    "artifacts/ibm_cache/ibm_jobs.json",
+    "artifacts/claims_map.json"
+  ],
+  "package_versions": {
+    "matplotlib": "3.10.7",
+    "numpy": "1.26.4",
+    "pandas": "missing",
+    "qiskit": "missing",
+    "qiskit_aer": "missing",
+    "qiskit_ibm_runtime": "missing",
+    "scipy": "1.17.0",
+    "torch": "missing",
+    "tqdm": "missing"
+  },
+  "timestamp_utc": "2026-02-16T08:44:35.231270+00:00"
+}

@@ -36,3 +36,31 @@ artifacts/**/ibm_cache/
 artifacts/**/ibm_jobs.jsonl
 artifacts/**/hardware_error.log
 artifacts/**/backends_available.txt
+
+# Public tracked docs and curated artifacts.
+# These override user-level global ignores for `docs/` and `artifacts/`.
+!docs/
+docs/*
+!docs/theory.md
+
+!artifacts/
+artifacts/*
+!artifacts/metrics.csv
+!artifacts/summary.md
+!artifacts/metrics_sim.csv
+!artifacts/summary_sim.md
+!artifacts/metrics_ibm.csv
+!artifacts/summary_ibm.md
+!artifacts/run_manifest.json
+!artifacts/claims_map.json
+!artifacts/fig_error_vs_shots_sim.png
+!artifacts/fig_calibration_sim.png
+!artifacts/fig_error_vs_shots_ibm.png
+!artifacts/fig_sim_vs_ibm_gap.png
+!artifacts/fig_sample_efficiency.png
+!artifacts/fig_shift_abstention.png
+!artifacts/fig_calibration.png
+!artifacts/fig_error_comparison.png
+!artifacts/ibm_cache/
+artifacts/ibm_cache/*
+!artifacts/ibm_cache/ibm_jobs.json
